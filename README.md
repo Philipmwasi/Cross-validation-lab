@@ -75,13 +75,13 @@ Fit a linear regression model on the training set
 
 ```python
 # Import LinearRegression from sklearn.linear_model
-
+from sklearn.linear_model import LinearRegression
 ```
 
 
 ```python
 # Instantiate and fit a linear regression model
-
+model = LinearRegression()
 ```
 
 ### Calculate MSE
@@ -91,13 +91,13 @@ Calculate the mean squared error on the test set
 
 ```python
 # Import mean_squared_error from sklearn.metrics
-
+from sklearn.metrics import mean_squared_error
 ```
 
 
 ```python
 # Calculate MSE on test set
-
+mse_train = mean_squared_error(y_train, y_pred_train)
 ```
 
 ## Cross-Validation using Scikit-Learn
@@ -107,19 +107,20 @@ Now let's compare that single test MSE to a cross-validated test MSE.
 
 ```python
 # Import cross_val_score from sklearn.model_selection
-
+from sklearn.model_selection import cross_val_score
 ```
 
 
 ```python
 # Find MSE scores for a 5-fold cross-validation
-
+mse_scores = cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error')
+mse_scores_positive = -mse_scores
 ```
 
 
 ```python
 # Get the average MSE score
-
+mse_score_5fold = np.mean(mse_scores_positive)
 ```
 
 Compare and contrast the results. What is the difference between the train-test split and cross-validation results? Do you "trust" one more than the other?
@@ -159,7 +160,18 @@ Because the example dataframe has 7 records, which is not evenly divisible by 3,
 def kfolds(data, k):
     folds = []
     
-    # Your code here
+    n = len(data)
+    fold_sizes = [n // k] * k  # Divide the dataset into k equal parts
+    remainder = n % k  # Calculate the remainder
+    for i in range(remainder):  # Distribute the remainder to the first few folds
+        fold_sizes[i] += 1
+
+        
+    start = 0
+    for fold_size in fold_sizes:
+        end = start + fold_size
+        folds.append(data[start:end])
+        start = end
     
     return folds
 ```
@@ -193,18 +205,21 @@ k = 5
 
 for n in range(k):
     # Split into train and test for the fold
-    X_train = None
-    X_test = None
-    y_train = None
-    y_test = None
+    X_train =  pd.concat(xfolds[:n] + xfolds[n+1:]) 
+    X_test = xfolds[n]               
+    y_train = pd.concat(yfolds[:n] + yfolds[n+1:])
+    y_test = yfolds[n]
     
     # Fit a linear regression model
-    None
+    model = LinearRegression()
+    model.fit(X_train, y_train)
     
     # Evaluate test errors
-    None
+    predictions = model.predict(X_test)
+    test_error = mean_squared_error(y_test, predictions)
+    test_errs.append(test_error)
 
-print(test_errs)
+print(np.mean(test_errs))
 ```
 
 If your code was written correctly, these should be the same errors as scikit-learn produced with `cross_val_score` (within rounding error). Test this out below:
